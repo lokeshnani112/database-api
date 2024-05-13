@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="9ff7a870-81a9-44f7-bb1e-5b09dadfa961" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="3cc23963-ef2a-4b1d-badf-e3fd25b2d19b" >
+		<db:my-sql-connection host="localhost" port="3306" user="root" password="admin123" database="data" />
+	</db:config>
+	<flow name="database-apiFlow" doc:id="68c3a998-fcdc-4e5e-a181-6ee2238076ca" >
+		<http:listener doc:name="Listener" doc:id="087796fc-b859-4659-9b99-92c6796bc788" path="/select" config-ref="HTTP_Listener_config"/>
+		<logger level="INFO" doc:name="Logger" doc:id="e30a2a7a-4076-49a8-aac2-b245924c825b" message="#[payload]"/>
+		<db:select doc:name="Select" doc:id="c72a304e-3b35-4082-982f-c4a0daaae9a4" config-ref="Database_Config">
+			<db:sql ><![CDATA[SELECT * from student;]]></db:sql>
+		</db:select>
+		<ee:transform doc:name="Transform Message" doc:id="0c7043ce-f4a6-4f49-83d7-9b2abc4d2f08" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="database-apiFlow2" doc:id="35cf3a95-b462-48ff-b7c3-85e00c5c784a" >
+		<http:listener doc:name="Listener" doc:id="9389293d-b529-4384-9f33-ba7ecc211b7d" config-ref="HTTP_Listener_config" path="/bulkInsert" />
+		<db:bulk-insert doc:name="Bulk insert" doc:id="d5ae8262-a15f-40e5-b06f-49889210ce7e" config-ref="Database_Config">
+			<db:sql ><![CDATA[INSERT INTO student (name, email, mobile, age) VALUES (:name, :email, :mobile, :age)]]></db:sql>
+		</db:bulk-insert>
+	</flow>
+	<flow name="database-apiFlow1" doc:id="62eaa4af-27e4-44b4-a036-d1b554c11d03" >
+		<http:listener doc:name="Listener" doc:id="9ea5a6cb-9ccc-4c95-8647-58b88ef044f0" config-ref="HTTP_Listener_config" path="/insert" />
+		<db:insert doc:name="Insert" doc:id="249307a7-2e27-4040-8762-7510262e5518" config-ref="Database_Config">
+			<db:sql ><![CDATA[INSERT INTO student (name, email, mobile, age) VALUES (:name, :email, :mobile, :age)]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+            name: payload.name,
+            email: payload.email,
+            mobile: payload.mobile,
+            age: payload.age
+      }]]]></db:input-parameters>
+		</db:insert>
+	</flow>
+</mule>
